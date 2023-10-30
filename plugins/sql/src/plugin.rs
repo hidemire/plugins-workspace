@@ -234,7 +234,7 @@ async fn select(
     db: String,
     query: String,
     values: Vec<JsonValue>,
-) -> Result<Vec<HashMap<String, JsonValue>>> {
+) -> Result<Vec<Vec<JsonValue>>> {
     let mut instances = db_instances.0.lock().await;
     let db = instances.get_mut(&db).ok_or(Error::DatabaseNotLoaded(db))?;
     let mut query = sqlx::query(&query);
@@ -250,13 +250,13 @@ async fn select(
     let rows = query.fetch_all(&*db).await?;
     let mut values = Vec::new();
     for row in rows {
-        let mut value = HashMap::default();
-        for (i, column) in row.columns().iter().enumerate() {
+        let mut value = Vec::new();
+        for (i, _column) in row.columns().iter().enumerate() {
             let v = row.try_get_raw(i)?;
 
             let v = crate::decode::to_json(v)?;
 
-            value.insert(column.name().to_string(), v);
+            value.push(v)
         }
 
         values.push(value);
